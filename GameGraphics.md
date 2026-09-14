@@ -46,7 +46,7 @@
 
 `HitEffect`는 짧은 시간 동안 발생하고 사라지는 효과로 구성하여 플레이어의 입력이나 공격·피격과 같은 순간적인 게임 사건을 시각적으로 전달하는 용도로 설계하였다.
 
-Space 키를 누르면 `EffectSpawner`가 이펙트를 생성하며, 키를 계속 누르고 있어도 같은 프레임에서 반복 생성되지 않도록 구성하였다.
+Space 키를 누르면 `EffectSpawner`가 이펙트를 생성하며, `wasPressedThisFrame`을 사용하여 키를 계속 누르고 있어도 매 프레임마다 반복 생성되지 않도록 구성하였다.
 
 ### 2-3. GroundEffect 배치 분석
 
@@ -61,32 +61,38 @@ Space 키를 누르면 `EffectSpawner`가 이펙트를 생성하며, 키를 계�
 | Start Lifetime | `0.8초` |
 | Start Size | `0.2` |
 
-GroundEffect는 바닥 영역에서 발생하는 효과를 표현하여 지면 기반의 그래픽 이펙트를 확인할 수 있도록 구성하였다.
+`GroundEffect`는 바닥 영역에서 발생하는 효과를 표현하여 지면 기반의 그래픽 이펙트를 확인할 수 있도록 구성하였다.
 
 ---
 
 ## 3. Shader Graph 머티리얼
 
-### Shader Graph
+### 3-1. Shader Graph
 
 사용 Shader Graph:
 
 `SG_Glow`
 
-### 핵심 노드 연결
+사용 머티리얼:
+
+`M_Glow`
+
+`M_Glow` 머티리얼을 Cube 오브젝트에 적용하였다.
+
+### 3-2. 핵심 노드 연결
 
 ```text
 Fresnel Effect
-      ↓
-   Multiply ← Color
-      ↓
-   Emission
+       ↓
+    Multiply ← HDR Color
+       ↓
+    Emission
 
-   Fresnel Effect를 이용하여 카메라와 표면의 각도에 따라 외곽 부분이 강조되도록 구성하였다.
+Fresnel Effect를 이용하여 카메라와 표면의 각도에 따라 외곽 부분이 강조되도록 구성하였다.
 
-Fresnel 결과에 Color 값을 Multiply하여 발광 색상을 조절하고, 최종 결과를 Emission에 연결하였다.
+Fresnel 결과에 HDR Color 값을 Multiply하여 발광 색상과 강도를 조절하고, 최종 결과를 Emission에 연결하였다.
 
-사용 기능
+3-3. 사용 기능
 기능	사용
 Emission	O
 Fresnel	O
@@ -97,13 +103,13 @@ Alpha	X
 과제에서 요구하는 Emission, Fresnel, Noise, UV Animation, Alpha 중 Emission과 Fresnel을 사용하였다.
 
 4. PBR 머티리얼 비교
-사용 머티리얼
+4-1. 사용 머티리얼
 
 PBR_Metal
 
 Sphere 오브젝트에 PBR 머티리얼을 적용하여 금속성 및 표면의 매끄러움에 따른 표현을 확인하였다.
 
-주요 설정
+4-2. 주요 설정
 항목	값
 Workflow Mode	Metallic
 Metallic	1.0
@@ -159,13 +165,13 @@ Shape	On
 두 Particle System을 각각 Prefab으로 구성하였다.
 
 6. Visual Effect Graph 이펙트
-VFX Graph
+6-1. VFX Graph
 
 사용 에셋:
 
 VFX_Glow
 
-기본 흐름
+6-2. 기본 흐름
 Spawn
   ↓
 Initialize
@@ -176,18 +182,17 @@ Output
 
 VFX Graph의 기본적인 파티클 처리 흐름을 구성하여 파티클 생성부터 초기화, 갱신, 화면 출력까지의 과정을 확인하였다.
 
-Spawn
+6-3. Spawn
 
-SpawnRate를 Exposed Property로 설정하였다.
+SpawnRate를 Blackboard의 Float Property로 생성하고 Exposed Property로 설정하였다.
+
+현재 값:
 
 SpawnRate = 30
 
-Inspector에서 SpawnRate 값을 직접 변경할 수 있도록 구성하였다.
+Inspector에서 SpawnRate 값을 직접 변경하여 파티클 생성량을 조절할 수 있도록 구성하였다.
 
-Initialize
-
-주요 설정:
-
+6-4. Initialize
 항목	값
 Capacity	128
 Bounds Center Y	-2
@@ -198,20 +203,20 @@ Spawn Mode	Random
 Speed Mode	Random
 Min Speed	0.5
 Max Speed	4.5
-Update
+6-5. Update
 항목	값
 Gravity	사용
 Gravity Force Y	-9.81
 Linear Drag	사용
 Drag Coefficient	0.5
-Output
+6-6. Output
 항목	설정
 Blend Mode	Alpha
 Orient	Face Camera Plane
 Multiply Size Over Life	사용
 Multiply Color Over Life	사용
 7. 코드 연동
-EffectSpawner.cs
+7-1. EffectSpawner.cs
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -227,7 +232,7 @@ public class EffectSpawner : MonoBehaviour
         }
     }
 }
-동작 과정
+7-2. 동작 과정
 Space 입력
     ↓
 wasPressedThisFrame 확인
@@ -245,7 +250,7 @@ Space 키를 한 번 누르면 HitEffect가 한 번 생성되며, Space 키를 �
 8. 구현 설정 기록
 8-1. 프로젝트 및 URP 환경
 항목	설정
-Unity	6000.5.9f1
+Unity Version	6000.5.9f1
 Render Pipeline	URP
 Project Template	Universal 3D
 Color Space	Linear
@@ -255,10 +260,10 @@ Global Volume	사용
 Bloom	사용
 8-2. Shader Graph 핵심 연결
 Fresnel Effect
-      ↓
-   Multiply ← Color
-      ↓
-   Emission
+       ↓
+    Multiply ← HDR Color
+       ↓
+    Emission
 
 Shader Graph에서 Fresnel과 Emission을 사용하여 발광 효과를 구현하였다.
 
@@ -283,6 +288,7 @@ SpawnRate를 Exposed Property로 설정하여 Inspector에서 생성량을 조�
 현재 값:
 
 SpawnRate = 30
+
 8-6. Bloom
 항목	값
 Threshold	0.8
